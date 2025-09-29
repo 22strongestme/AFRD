@@ -1,0 +1,111 @@
+from methods.model import CoverModel
+import torch
+from methods.resnet import *
+import numpy as np
+from scipy.ndimage import gaussian_filter
+import os
+from torch.nn import functional as F
+
+valid_backbones = ['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2']
+
+class ST(CoverModel):
+
+    def __init__(self, **kwargs):
+        super(ST, self).__init__()
+        self.out_size_h = kwargs['out_size_h']
+        self.out_size_w = kwargs['out_size_w']
+        self.device = kwargs['device']
+
+        self.model = self.get_model(**kwargs)
+
+
+    def get_model(self, **kwargs) ->torch.nn.Module:
+        backbone = kwargs['backbone']
+
+        assert backbone in valid_backbones, f"We only support backbones in {valid_backbones}"
+
+        model_t, _ = eval(f'{backbone}(pretrained=True)')
+        model_s, _ = eval(f'{backbone}(pretrained=False)')
+
+        for param in model_t.parameters():
+            param.requires_grad = False
+        model_t.eval()
+
+        model = torch.nn.ModuleDict({'t':model_t, 's':model_s})
+
+        return model
+
+    def forward(self, x, **kwargs)->dict:
+
+        with torch.no_grad():
+            feature_t = self.model['t'](x)
+        feature_s = self.model['s'](x)
+
+        return {'ft':feature_t, 'fs':feature_s}
+
+    def cal_loss(self, **kwargs) -> torch.Tensor:
+        ft_list = kwargs['ft']
+        fs_list = kwargs['fs']
+
+        cos_loss = torch.nn.CosineSimilarity()
+        loss = 0
+        for item in range(len(ft_list)):
+            loss += torch.mean(1 - cos_loss(ft_list[item].view(ft_list[item].shape[0], -1),
+                                            fs_list[item].view(fs_list[item].shape[0], -1)))
+        return loss
+
+    @torch.no_grad()
+    def cal_am(self, **kwargs) -> np.ndarray:
+        ft_list = kwargs['ft']
+        fs_list = kwargs['fs']
+
+        anomaly_map = 0
+        for i in range(len(ft_list)):
+            fs = fs_list[i]
+            ft = ft_list[i]
+            _, _, h, w = fs.shape
+            a_map = 1 - F.cosine_similarity(fs, ft)
+            a_map = torch.unsqueeze(a_map, dim=1)
+            a_map = F.interpolate(a_map, size=(self.out_size_h, self.out_size_w), mode='bilinear', align_corners=False)
+            anomaly_map += a_map
+        anomaly_map = anomaly_map.squeeze(1).cpu().numpy()
+        for i in range(anomaly_map.shape[0]):
+            anomaly_map[i] = gaussian_filter(anomaly_map[i], sigma=4)
+
+        return anomaly_map
+
+    def save(self, path):
+        torch.save(self.model['s'].state_dict(), path)
+
+    def load(self, path):
+        self.model['s'].load_state_dict(torch.load(path, map_location=self.device))
+
+    def train_mode(self):
+        self.model['t'].eval()
+        self.model['s'].train()
+
+    def eval_mode(self):
+        self.model['t'].eval()
+        self.model['s'].eval()
+
+
+if __name__ == '__main__':
+    args = {'out_size':224, 'device':'cpu'}
+    model = ST(**args)
+
+    x = torch.rand(2, 3, 224, 224)
+
+    outputs = model(x)
+    loss = model.cal_loss(**outputs)
+
+    ams = model.cal_am(**outputs)
+
+    print(loss)
+    print(ams)
+    print(type(ams))
+    print(ams.shape)
+
+    save_path = './result/test.ab'
+
+    model.save(save_path)
+    model.load(save_path)
