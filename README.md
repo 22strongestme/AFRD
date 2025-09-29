@@ -3,10 +3,13 @@ Official implementation of the paper "Attention Fusion Reverse Distillation for 
 
 ## Abstract
 This study focuses on Multi-Lighting Image Anomaly Detection (MLIAD), where multiple lighting conditions are used to improve imaging quality and anomaly detection performance. Since existing image anomaly detection methods cannot handle multiple inputs (like multi-lighting images) for a single sample, it proposes the Attention Fusion Reverse Distillation (AFRD) method. Specifically, AFRD uses a pre-trained teacher network to extract features from multiple inputs, fuses these features via an attention module, and then uses a student network to regress the fused features—with regression errors serving as anomaly scores during inference. Experiments on the Eyecandies dataset show that AFRD outperforms other MLIAD alternatives and highlights the benefit of multi-lighting conditions for anomaly detection.
+## Framework
+
+## Result
 
 ## Citation
 If you use this dataset in your research, please cite the following paper:
-[Attention Fusion Reverse Distillation for Multi-Lighting Image Anomaly Detection]([https://ieeexplore.ieee.org/document/10710633/citations?tabFilter=papers#citations])
+[Attention Fusion Reverse Distillation for Multi-Lighting Image Anomaly Detection](https://ieeexplore.ieee.org/document/10711818)
 ```bibtex
 @INPROCEEDINGS{10711818,
   author={Zhang, Yiheng and Cao, Yunkang and Zhang, Tianhang and Shen, Weiming},
