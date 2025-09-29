@@ -6,7 +6,7 @@ This study focuses on Multi-Lighting Image Anomaly Detection (MLIAD), where mult
 
 ## Citation
 If you use this dataset in your research, please cite the following paper:
-[Attention Fusion Reverse Distillation for Multi-Lighting Image Anomaly Detection]([https://ieeexplore.ieee.org/document/10710633/citations?tabFilter=papers#citations]
+[Attention Fusion Reverse Distillation for Multi-Lighting Image Anomaly Detection]([https://ieeexplore.ieee.org/document/10710633/citations?tabFilter=papers#citations])
 ```bibtex
 @INPROCEEDINGS{10711818,
   author={Zhang, Yiheng and Cao, Yunkang and Zhang, Tianhang and Shen, Weiming},
